@@ -1,0 +1,1916 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+
+<style>
+body{
+margin:0;
+font-family:Arial;
+display:flex;
+}
+
+/* LOGIN OVERLAY */
+#loginPage{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:#0f0f0f;
+display:flex;
+justify-content:center;
+align-items:center;
+z-index:9999;
+}
+
+/* LOGIN BOX */
+.login-box {
+    background: #111;
+    padding: 40px;
+    border-radius: 20px;
+    width: 320px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(0,0,0,0.6);
+}
+
+.login-box input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 10px;
+    border: none;
+    background: #222;
+    color: white;
+}
+
+.login-box button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(45deg,#00f2ea,#ff0050);
+    color: white;
+    cursor: pointer;
+}
+
+/* SIDEBAR */
+.sidebar{
+width:220px;
+background:#0f0f0f;
+color:white;
+height:100vh;
+padding:20px;
+}
+
+.logo{
+font-size:24px;
+font-weight:bold;
+background: linear-gradient(45deg,#00f2ea,#ff0050);
+-webkit-background-clip: text;
+color: transparent;
+margin-bottom:30px;
+}
+
+.menu div{
+padding:12px;
+margin:5px 0;
+background:#111;
+border-radius:10px;
+cursor:pointer;
+}
+
+.menu div:hover{
+background:#222;
+}
+
+/* MAIN */
+.main{
+flex:1;
+background:#f5f5f5;
+padding:20px;
+overflow:auto;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:15px;
+margin-bottom:20px;
+}
+
+/* TABLE */
+table{
+width:100%;
+border-collapse: collapse;
+}
+
+th,td{
+padding:10px;
+border-bottom:1px solid #ddd;
+text-align:left;
+}
+
+button{
+padding:5px 10px;
+border:none;
+border-radius:5px;
+cursor:pointer;
+}
+
+.approve{background:green;color:white;}
+.reject{background:red;color:white;}
+
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage">
+<div class="login-box">
+
+    <h2 style="color:white;">Admin Login</h2>
+
+    <input id="username" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+
+    <button onclick="login()">Login</button>
+
+    <div id="error" style="color:red;"></div>
+
+</div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+
+<div class="logo"><img src="https://cdn.jsdelivr.net/gh/oscerm328-stack/tiktok_mall@main/hero-bg.png" style="width:100%;height:auto;display:block;border-radius:8px;" alt="TikTok Shop"></div>
+
+<div class="menu">
+<div onclick="showPage('dashboard')">📊 Dashboard</div>
+<div onclick="showPage('users')" style="display:flex;justify-content:space-between;align-items:center;">
+  <span>👥 Users</span>
+  <span id="badgeUsers" style="display:none;background:#ff3b30;color:white;font-size:11px;font-weight:bold;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;"></span>
+</div>
+<div onclick="showPage('stores')" style="display:flex;justify-content:space-between;align-items:center;">
+  <span>🏪 Stores</span>
+  <span id="badgeStores" style="display:none;background:#ff3b30;color:white;font-size:11px;font-weight:bold;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;"></span>
+</div>
+<div onclick="showPage('wallet')" style="display:flex;justify-content:space-between;align-items:center;">
+  <span>💰 Wallet</span>
+  <span id="badgeWallet" style="display:none;background:#ff3b30;color:white;font-size:11px;font-weight:bold;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;"></span>
+</div>
+<div onclick="showPage('orders')" style="display:flex;justify-content:space-between;align-items:center;">
+  <span>📦 Orders</span>
+  <span id="badgeOrders" style="display:none;background:#ff3b30;color:white;font-size:11px;font-weight:bold;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;"></span>
+</div>
+<div onclick="showPage('support')" style="display:flex;justify-content:space-between;align-items:center;">
+  <span>🎧 Support</span>
+  <span id="adminSupportBadge" style="display:none;background:#ff3b30;color:white;font-size:11px;font-weight:bold;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;"></span>
+</div>
+<div onclick="showPage('invite')">🎟️ Invite Code</div>
+<div onclick="showPage('logs')">📋 Logs</div>
+<div onclick="logout()">🚪 Logout</div>
+</div>
+
+</div>
+
+<!-- MAIN -->
+<div class="main" id="content">
+
+<h2>Welcome Admin 👑</h2>
+
+</div>
+
+<script>
+
+// ================= XSS PROTECTION =================
+function sanitize(str) {
+    if (!str) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#x27;");
+}
+
+// LOGIN - حقيقي عبر السيرفر
+async function login(){
+    let username = document.getElementById("username").value.trim();
+    let password = document.getElementById("password").value.trim();
+    let errEl = document.getElementById("error");
+
+    if(!username || !password){ errEl.innerText = "Please enter username and password"; return; }
+
+    let res = await fetch("/admin-login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ username, password })
+    });
+    let data = await res.json();
+
+    if(data.success && data.token){
+        // حفظ التوكن في memory فقط (لا localStorage)
+        _adminToken = data.token;
+        await fetchCsrfToken();
+        document.getElementById("loginPage").style.display = "none";
+    } else {
+        errEl.innerText = "Wrong username or password";
+    }
+}
+
+// التوكن في memory فقط - لا localStorage
+var _adminToken = "";
+var _csrfToken = "";
+
+// جلب CSRF token من السيرفر
+async function fetchCsrfToken(){
+    try {
+        let res = await fetch("/csrf-token", { credentials: "include" });
+        let data = await res.json();
+        if(data.token) _csrfToken = data.token;
+    } catch {}
+}
+
+// دالة مساعدة لإرسال requests بالتوكن + cookie
+function adminFetch(url, options = {}){
+    let opts = Object.assign({}, options);
+    opts.headers = Object.assign({}, options.headers || {});
+    if(_adminToken) opts.headers["Authorization"] = "Bearer " + _adminToken;
+    if(_csrfToken)  opts.headers["X-CSRF-Token"] = _csrfToken;
+    opts.credentials = "include";
+    return fetch(url, opts);
+}
+
+// AUTO LOGIN - تحقق حقيقي مع السيرفر + استرجاع التوكن
+async function checkAutoLogin(){
+    try {
+        let res = await fetch("/admin/verify", { credentials: "include" });
+        let data = await res.json();
+        if(data.valid){
+            // نطلب توكن جديد بالـ cookie الموجود
+            let tokenRes = await fetch("/admin/refresh-token", { credentials: "include" });
+            let tokenData = await tokenRes.json();
+            if(tokenData.token){
+                _adminToken = tokenData.token;
+                await fetchCsrfToken();
+            }
+            document.getElementById("loginPage").style.display = "none";
+        }
+    } catch {}
+}
+checkAutoLogin();
+
+// ================= NOTIFICATION SYSTEM =================
+// نحفظ آخر عدد رأيناه - نبدأ بـ -1 حتى نعرف أنه أول مرة
+var _prevDeposits  = -1;
+var _prevWithdraws = -1;
+var _prevStores    = -1;
+var _prevOrders    = -1;
+var _prevUsers     = -1;
+var _prevMessages  = -1;
+var _adminLastSeenSupport = parseInt(localStorage.getItem("adminLastSeenSupport") || "0");
+
+// ===== أصوات بصوت بشري =====
+var _speechReady = false;
+var _speechQueue = [];
+var _isSpeaking = false;
+
+var _speechTexts = {
+    deposit:  "You have a new deposit request, please review it",
+    withdraw: "You have a new withdrawal request, please review it",
+    message:  "You have a new message from a customer",
+    store:    "You have a new store application waiting for approval",
+    order:    "You have a new order",
+    user:     "A new user has registered"
+};
+
+function _speakNext(){
+    if(_isSpeaking || _speechQueue.length === 0) return;
+    var text = _speechQueue.shift();
+    _isSpeaking = true;
+    var msg = new SpeechSynthesisUtterance(text);
+    msg.lang   = "en-US";
+    msg.rate   = 0.85;
+    msg.pitch  = 1.3;
+    msg.volume = 1.0;
+    var voices = window.speechSynthesis.getVoices();
+    var femaleVoice = voices.find(function(v){
+        return v.name === "Samantha" ||
+               v.name === "Victoria" ||
+               v.name === "Karen"    ||
+               v.name === "Zira"     ||
+               v.name.toLowerCase().includes("female");
+    }) || voices.find(function(v){
+        return v.lang === "en-US" || v.lang === "en_US";
+    });
+    if(femaleVoice) msg.voice = femaleVoice;
+    msg.onend = function(){
+        _isSpeaking = false;
+        setTimeout(_speakNext, 300);
+    };
+    msg.onerror = function(){
+        _isSpeaking = false;
+        setTimeout(_speakNext, 300);
+    };
+    window.speechSynthesis.speak(msg);
+}
+
+function playSound(type){
+    if(!_speechReady) return;
+    if(!window.speechSynthesis) return;
+    var text = _speechTexts[type] || type;
+    _speechQueue.push(text);
+    _speakNext();
+}
+
+// فتح الصوت عند أول نقرة
+document.addEventListener("click", function(){
+    if(_speechReady) return;
+    if(!window.speechSynthesis) return;
+    // نرسل رسالة فارغة لفتح الصوت
+    var unlock = new SpeechSynthesisUtterance(" ");
+    unlock.volume = 0.01;
+    unlock.onend = function(){ _speechReady = true; };
+    window.speechSynthesis.speak(unlock);
+}, false);
+
+// تحميل الأصوات
+if(window.speechSynthesis){
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = function(){
+        window.speechSynthesis.getVoices();
+    };
+}
+
+// ===== Badge helper =====
+function setBadge(id, count){
+    var el = document.getElementById(id);
+    if(!el) return;
+    if(count > 0){
+        el.style.display = "flex";
+        el.innerText = count > 99 ? "99+" : String(count);
+    } else {
+        el.style.display = "none";
+        el.innerText = "";
+    }
+}
+
+// ===== فحص كل 5 ثوان =====
+async function checkAllNotifications(){
+    try {
+        // --- 1. الإيداعات والسحوبات ---
+        var reqRes = await adminFetch("/all-requests");
+        var reqs   = await reqRes.json();
+        var deposits  = reqs.filter(function(r){ return r.type==="recharge" && r.status==="pending"; }).length;
+        var withdraws = reqs.filter(function(r){ return r.type==="withdraw" && r.status==="pending"; }).length;
+
+        if(_prevDeposits !== -1 && deposits > _prevDeposits)   playSound("deposit");
+        if(_prevWithdraws !== -1 && withdraws > _prevWithdraws) playSound("withdraw");
+
+        setBadge("badgeWallet", deposits + withdraws);
+        _prevDeposits  = deposits;
+        _prevWithdraws = withdraws;
+
+        // --- 2. المتاجر ---
+        var storeRes = await adminFetch("/all-store-applications");
+        var stores   = await storeRes.json();
+        var pending  = stores.filter(function(s){ return s.status==="pending"; }).length;
+
+        if(_prevStores !== -1 && pending > _prevStores) playSound("store");
+        setBadge("badgeStores", pending);
+        _prevStores = pending;
+
+        // --- 3. الأوردرات ---
+        var orderRes = await adminFetch("/all-orders");
+        var orders   = await orderRes.json();
+        var orderCount = orders.length;
+
+        if(_prevOrders !== -1 && orderCount > _prevOrders) playSound("order");
+        var newOrders = _prevOrders === -1 ? 0 : orderCount - _prevOrders;
+        setBadge("badgeOrders", newOrders > 0 ? newOrders : 0);
+        _prevOrders = orderCount;
+
+        // --- 4. المستخدمون ---
+        var userRes = await adminFetch("/admin/users");
+        var usrs    = await userRes.json();
+        var userCount = usrs.length;
+
+        if(_prevUsers !== -1 && userCount > _prevUsers) setBadge("badgeUsers", userCount - _prevUsers);
+        _prevUsers = userCount;
+
+        // --- 5. الرسائل ---
+        var msgRes  = await adminFetch("/admin-support-unread?lastSeen=" + _adminLastSeenSupport);
+        var msgData = await msgRes.json();
+        if(_prevMessages !== -1 && msgData.count > _prevMessages) playSound("message");
+        _prevMessages = msgData.count;
+        setBadge("adminSupportBadge", msgData.count);
+
+    } catch(e){ console.log("notification error:", e); }
+}
+
+setTimeout(function(){
+    checkAllNotifications();
+    setInterval(checkAllNotifications, 5000);
+}, 3000);
+
+
+async function deleteUser(email){
+    if(!confirm('Delete user ' + email + '? This cannot be undone.')) return;
+    let res = await adminFetch('/delete-user', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ email: email })
+    });
+    let data = await res.json();
+    if(data.success){
+        alert('User deleted 🗑️');
+        showPage('users');
+    } else {
+        alert('Error ❌');
+    }
+}
+
+function editUser(email){
+
+    let newEmail = prompt("Enter new email:", email);
+    let newPass = prompt("Enter new password:");
+
+    if(!newEmail && !newPass) return;
+
+    adminFetch("/edit-user", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            oldEmail: email,
+            newEmail: newEmail,
+            newPassword: newPass
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success){
+            alert("Updated successfully ✅");
+            showPage("users");
+        } else {
+            alert("Error ❌");
+        }
+    });
+
+}
+
+// LOGOUT
+function logout(){
+    _adminToken = "";
+    // مسح الـ cookie من السيرفر
+    fetch("/logout", { method: "POST", credentials: "include" }).finally(() => {
+        location.reload();
+    });
+}
+
+function showPage(page){
+
+// مسح الـ badge عند فتح الصفحة
+if(page === "wallet")  setBadge("badgeWallet", 0);
+if(page === "stores")  setBadge("badgeStores", 0);
+if(page === "orders")  setBadge("badgeOrders", 0);
+if(page === "users")   setBadge("badgeUsers",  0);
+
+// USERS
+if(page === 'dashboard'){
+document.getElementById("content").innerHTML = `
+<div class="card">
+<h2>📊 Dashboard</h2>
+<div id="analyticsBox" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:15px;margin-top:15px;">
+  <div style="background:#e3f2fd;border-radius:12px;padding:20px;text-align:center;">
+    <div style="font-size:32px;font-weight:bold;color:#1976d2;" id="statUsers">...</div>
+    <div style="color:#555;margin-top:5px;">👥 Total Users</div>
+  </div>
+  <div style="background:#e8f5e9;border-radius:12px;padding:20px;text-align:center;">
+    <div style="font-size:32px;font-weight:bold;color:#388e3c;" id="statDeposits">...</div>
+    <div style="color:#555;margin-top:5px;">📥 Deposits</div>
+  </div>
+  <div style="background:#fff3e0;border-radius:12px;padding:20px;text-align:center;">
+    <div style="font-size:32px;font-weight:bold;color:#f57c00;" id="statWithdraws">...</div>
+    <div style="color:#555;margin-top:5px;">📤 Withdrawals</div>
+  </div>
+  <div style="background:#fce4ec;border-radius:12px;padding:20px;text-align:center;">
+    <div style="font-size:32px;font-weight:bold;color:#c62828;" id="statPending">...</div>
+    <div style="color:#555;margin-top:5px;">⏳ Pending</div>
+  </div>
+  <div style="background:#f3e5f5;border-radius:12px;padding:20px;text-align:center;">
+    <div style="font-size:32px;font-weight:bold;color:#6a1b9a;" id="statOrders">...</div>
+    <div style="color:#555;margin-top:5px;">📦 Orders</div>
+  </div>
+  <div style="background:#e0f7fa;border-radius:12px;padding:20px;text-align:center;">
+    <div style="font-size:32px;font-weight:bold;color:#00838f;" id="statRevenue">...</div>
+    <div style="color:#555;margin-top:5px;">💰 Revenue $</div>
+  </div>
+</div>
+<h3 style="margin-top:25px;">🕒 Recent Activity</h3>
+<div id="recentLogs" style="color:#555;font-size:13px;">Loading...</div>
+</div>
+`;
+adminFetch("/admin/analytics")
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById("statUsers").innerText    = data.totalUsers || 0;
+    document.getElementById("statDeposits").innerText = data.totalDeposits || 0;
+    document.getElementById("statWithdraws").innerText= data.totalWithdraws || 0;
+    document.getElementById("statPending").innerText  = data.pendingReqs || 0;
+    document.getElementById("statOrders").innerText   = data.totalOrders || 0;
+    document.getElementById("statRevenue").innerText  = "$" + (data.totalRevenue || "0.00");
+    let logsEl = document.getElementById("recentLogs");
+    if(data.recentLogs && data.recentLogs.length > 0){
+      logsEl.innerHTML = data.recentLogs.map(l =>
+        `<div style="padding:8px;border-bottom:1px solid #eee;">
+          <span style="color:#1976d2;">[${l.time}]</span>
+          <b>${l.type}</b> — ${l.details}
+          ${l.email ? '<span style="color:#999;">(' + l.email + ')</span>' : ''}
+        </div>`
+      ).join('');
+    } else {
+      logsEl.innerText = "No recent activity.";
+    }
+  })
+  .catch(() => {
+    document.getElementById("analyticsBox").innerHTML = "<p style='color:red;'>Failed to load analytics.</p>";
+  });
+}
+
+if(page === 'logs'){
+document.getElementById("content").innerHTML = `
+<div class="card">
+<h2>📋 System Logs</h2>
+<div style="margin-bottom:15px;display:flex;gap:10px;flex-wrap:wrap;">
+  <input id="logSearch" placeholder="Search logs..." style="padding:8px 12px;border-radius:8px;border:1px solid #ddd;flex:1;min-width:180px;" oninput="filterLogs()">
+  <select id="logType" style="padding:8px;border-radius:8px;border:1px solid #ddd;" onchange="filterLogs()">
+    <option value="">All Types</option>
+    <option value="login">Login</option>
+    <option value="login_failed">Login Failed</option>
+    <option value="register">Register</option>
+    <option value="admin_login">Admin Login</option>
+    <option value="deposit_approved">Deposit Approved</option>
+    <option value="withdraw_approved">Withdraw Approved</option>
+    <option value="request_rejected">Rejected</option>
+  </select>
+</div>
+<div id="logsList">Loading...</div>
+</div>
+`;
+loadLogs();
+}
+
+if(page === 'users'){
+adminFetch("/admin/users")
+.then(res => res.json())
+.then(data => {
+
+document.getElementById("content").innerHTML = `
+<div class="card">
+<h2>👥 Users <span style="font-size:14px;color:#999;font-weight:normal;">(${data.length} total)</span></h2>
+<input id="userSearchInput" placeholder="🔍 Search by email or country..." oninput="filterUsers()"
+  style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;margin-bottom:15px;font-size:14px;">
+<div id="usersTableWrap"></div>
+</div>
+`;
+
+window._allUsersData = data;
+renderUsersTable(data);
+
+});
+}
+
+function renderUsersTable(data){
+  var wrap = document.getElementById("usersTableWrap");
+  if(!wrap) return;
+
+  if(data.length === 0){
+    wrap.innerHTML = "<p style='color:#999;text-align:center;padding:20px;'>No users found</p>";
+    return;
+  }
+
+  var now = Date.now();
+  var twoDays = 2 * 24 * 60 * 60 * 1000;
+
+  var newUsers = data.filter(function(u){
+    if(!u.registeredAt) return false;
+    return (now - new Date(u.registeredAt).getTime()) < twoDays;
+  });
+  var oldUsers = data.filter(function(u){
+    if(!u.registeredAt) return true;
+    return (now - new Date(u.registeredAt).getTime()) >= twoDays;
+  });
+
+  function renderRow(user){
+    var deviceIcon = "🖥️";
+    var d = (user.registerDevice||"").toLowerCase();
+    if(d.includes("iphone"))         deviceIcon = "📱";
+    else if(d.includes("ipad"))      deviceIcon = "📱";
+    else if(d.includes("android"))   deviceIcon = "📱";
+    else if(d.includes("mac"))       deviceIcon = "💻";
+    else if(d.includes("windows"))   deviceIcon = "🖥️";
+
+    var countryFlag = "";
+    var country = user.registerCountry || "";
+    var flagMap = {
+      "United States":"🇺🇸","Saudi Arabia":"🇸🇦","Egypt":"🇪🇬","United Arab Emirates":"🇦🇪",
+      "Kuwait":"🇰🇼","Qatar":"🇶🇦","Bahrain":"🇧🇭","Oman":"🇴🇲","Jordan":"🇯🇴","Iraq":"🇮🇶",
+      "Syria":"🇸🇾","Lebanon":"🇱🇧","Morocco":"🇲🇦","Tunisia":"🇹🇳","Algeria":"🇩🇿","Libya":"🇱🇾",
+      "Yemen":"🇾🇪","Sudan":"🇸🇩","Pakistan":"🇵🇰","India":"🇮🇳","Turkey":"🇹🇷","United Kingdom":"🇬🇧",
+      "Germany":"🇩🇪","France":"🇫🇷","Canada":"🇨🇦","Australia":"🇦🇺","China":"🇨🇳",
+      "Indonesia":"🇮🇩","Malaysia":"🇲🇾","Philippines":"🇵🇭","Nigeria":"🇳🇬","Kenya":"🇰🇪"
+    };
+    countryFlag = flagMap[country] || "🌍";
+
+    return `
+<div style="border:1px solid #e0e0e0;border-radius:12px;padding:14px 16px;margin-bottom:10px;background:#fafafa;">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+    <div style="flex:1;min-width:0;">
+      <div style="font-weight:bold;font-size:14px;color:#111;margin-bottom:6px;">📧 ${sanitize(user.email)}</div>
+      <div style="font-size:12px;color:#555;margin-bottom:4px;">
+        🔑 <b>Password:</b> ${sanitize(user.plainPassword || "—")}
+      </div>
+      <div style="font-size:12px;color:#555;margin-bottom:4px;">
+        💰 <b>Balance:</b> <span style="color:#1976d2;font-weight:bold;">$${parseFloat(user.balance||0).toFixed(2)}</span>
+      </div>
+      ${user.registeredAt ? `<div style="font-size:11px;color:#999;">📅 Registered: ${sanitize(user.registeredAt)}</div>` : ""}
+    </div>
+    <div style="flex-shrink:0;">
+      <div style="display:flex;gap:6px;">
+        <button onclick="editUser('${sanitize(user.email)}')" style="padding:6px 12px;background:#1976d2;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;">✏️ Edit</button>
+        <button onclick="deleteUser('${sanitize(user.email)}')" style="padding:6px 12px;background:#e53935;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;">🗑️ Delete</button>
+      </div>
+    </div>
+  </div>
+  ${(user.registerIp || user.registerDevice || user.registerCountry) ? `
+  <div style="margin-top:10px;padding:10px 12px;background:white;border-radius:10px;border:1px solid #eee;display:flex;flex-wrap:wrap;gap:12px;">
+    ${user.registerIp ? `
+    <div style="display:flex;align-items:center;gap:5px;font-size:12px;">
+      <span style="background:#e3f2fd;color:#1565c0;padding:3px 8px;border-radius:6px;font-weight:600;">🌐 IP</span>
+      <span style="font-family:monospace;color:#333;font-weight:bold;">${sanitize(user.registerIp)}</span>
+    </div>` : ""}
+    ${user.registerCountry ? `
+    <div style="display:flex;align-items:center;gap:5px;font-size:12px;">
+      <span style="background:#f3e5f5;color:#6a1b9a;padding:3px 8px;border-radius:6px;font-weight:600;">${countryFlag} Country</span>
+      <span style="color:#333;">${sanitize(user.registerCountry)}${user.registerCity ? ", "+sanitize(user.registerCity) : ""}</span>
+    </div>` : ""}
+    ${user.registerDevice ? `
+    <div style="display:flex;align-items:center;gap:5px;font-size:12px;">
+      <span style="background:#e8f5e9;color:#2e7d32;padding:3px 8px;border-radius:6px;font-weight:600;">${deviceIcon} Device</span>
+      <span style="color:#333;">${sanitize(user.registerDevice)} · ${sanitize(user.registerOs||"")} · ${sanitize(user.registerBrowser||"")}</span>
+    </div>` : ""}
+  </div>
+  ` : `<div style="margin-top:8px;font-size:11px;color:#ccc;font-style:italic;">No registration info available (registered before this update)</div>`}
+</div>`;
+  }
+
+
+  if(newUsers.length > 0){
+    wrap.innerHTML = newUsers.map(renderRow).join("");
+  } else {
+    wrap.innerHTML = "<p style='color:#999;font-size:13px;'>No new users in the last 2 days.</p>";
+  }
+
+  // المستخدمون القدامى - مخفيون في قسم منطوي
+  if(oldUsers.length > 0){
+    var toggleDiv = document.createElement("div");
+    toggleDiv.id = "oldUsersToggle";
+    toggleDiv.style.cssText = "cursor:pointer;padding:12px 16px;background:#e3f2fd;border-radius:10px;margin:10px 0;font-weight:bold;color:#1565c0;display:flex;justify-content:space-between;align-items:center;";
+    toggleDiv.innerHTML = "<span>📁 Previous Users (" + oldUsers.length + ")</span><span id='oldUsersArrow'>▼ Show</span>";
+    toggleDiv.onclick = toggleOldUsers;
+
+    var oldContainer = document.createElement("div");
+    oldContainer.id = "oldUsersContainer";
+    oldContainer.style.display = "none";
+    oldContainer.innerHTML = oldUsers.map(renderRow).join("");
+
+    var wrapEl = document.getElementById("usersTableWrap");
+    wrapEl.appendChild(toggleDiv);
+    wrapEl.appendChild(oldContainer);
+  }
+}
+
+function toggleOldUsers(){
+  var c = document.getElementById("oldUsersContainer");
+  var a = document.getElementById("oldUsersArrow");
+  if(!c || !a) return;
+  if(c.style.display === "none"){
+    c.style.display = "block";
+    a.innerText = "▲ Hide";
+  } else {
+    c.style.display = "none";
+    a.innerText = "▼ Show";
+  }
+}
+
+function filterUsers(){
+  var q = (document.getElementById("userSearchInput")||{}).value||"";
+  q = q.toLowerCase();
+  if(!q){ renderUsersTable(window._allUsersData||[]); return; }
+  var filtered = (window._allUsersData||[]).filter(function(u){
+    return (u.email||"").toLowerCase().includes(q) ||
+           (u.registerCountry||"").toLowerCase().includes(q) ||
+           (u.registerCity||"").toLowerCase().includes(q) ||
+           (u.registerIp||"").includes(q) ||
+           (u.registerDevice||"").toLowerCase().includes(q);
+  });
+  renderUsersTable(filtered);
+}
+
+// STORES
+if(page === "stores"){
+    document.getElementById("content").innerHTML = `
+    <div class="card">
+        <h2>🏪 Store Applications</h2>
+        <div id="storeList">Loading...</div>
+    </div>
+    `;
+    loadStoreApplications();
+}
+
+if(page === "invite"){
+document.getElementById("content").innerHTML = `
+<div class="card">
+<h2>🎟️ Invite Code</h2>
+<p style="color:#666;font-size:14px;">Users enter this code when registering. You can change it at any time.</p>
+<div style="margin:20px 0;">
+  <label style="font-weight:bold;display:block;margin-bottom:8px;">Current Code:</label>
+  <div id="currentCodeDisplay" style="font-size:22px;font-weight:bold;color:#1976d2;background:#e3f2fd;padding:12px 20px;border-radius:10px;display:inline-block;letter-spacing:3px;">Loading...</div>
+</div>
+<div style="margin:20px 0;">
+  <label style="font-weight:bold;display:block;margin-bottom:8px;">New Code:</label>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    <input id="inviteCode" placeholder="Enter new code" style="padding:12px;border:2px solid #ddd;border-radius:10px;font-size:16px;width:220px;outline:none;">
+    <button onclick="saveCode()" style="padding:12px 24px;background:linear-gradient(45deg,#00f2ea,#ff0050);color:white;border:none;border-radius:10px;cursor:pointer;font-size:15px;font-weight:bold;">💾 Save</button>
+  </div>
+</div>
+<div id="codeMsg" style="margin-top:10px;font-size:14px;"></div>
+</div>
+
+<div class="card" style="margin-top:20px;">
+<h2>🔐 Backup Verification Code</h2>
+<p style="color:#666;font-size:14px;">This code can be given to users manually if the email verification fails.</p>
+<div style="margin:20px 0;">
+  <label style="font-weight:bold;display:block;margin-bottom:8px;">Current Backup Code:</label>
+  <div id="currentBackupDisplay" style="font-size:22px;font-weight:bold;color:#e53935;background:#ffebee;padding:12px 20px;border-radius:10px;display:inline-block;letter-spacing:3px;">Loading...</div>
+</div>
+<div style="margin:20px 0;">
+  <label style="font-weight:bold;display:block;margin-bottom:8px;">New Backup Code:</label>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    <input id="backupCodeInput" placeholder="Enter new backup code" style="padding:12px;border:2px solid #ddd;border-radius:10px;font-size:16px;width:220px;outline:none;">
+    <button onclick="saveBackupCode()" style="padding:12px 24px;background:linear-gradient(45deg,#e53935,#ff6f00);color:white;border:none;border-radius:10px;cursor:pointer;font-size:15px;font-weight:bold;">💾 Save</button>
+  </div>
+</div>
+<div id="backupCodeMsg" style="margin-top:10px;font-size:14px;"></div>
+</div>
+`;
+adminFetch("/get-invite-code").then(r=>r.json()).then(d=>{
+  var el = document.getElementById("currentCodeDisplay");
+  if(el) el.innerText = d.code;
+});
+// جلب كود التحقق الاحتياطي
+adminFetch("/get-backup-code").then(r=>r.json()).then(d=>{
+  var el = document.getElementById("currentBackupDisplay");
+  if(el) el.innerText = d.code || "TM2026";
+}).catch(function(){ 
+  var el = document.getElementById("currentBackupDisplay");
+  if(el) el.innerText = "TM2026";
+});
+}
+
+// WALLET
+if(page === "wallet"){
+
+document.getElementById("content").innerHTML = `
+<div class="card">
+
+<h2>💰 Wallet Management</h2>
+
+<!-- USERS LIST -->
+<h3>Users</h3>
+<div id="walletUsers"></div>
+
+<hr>
+
+<!-- USER CONTROL PANEL -->
+<div id="walletPanel" style="display:none;">
+
+<h3 id="walletUserEmail"></h3>
+
+<p>Balance:</p>
+<input id="balanceInput" type="number" style="width:100%;padding:10px">
+
+<button onclick="updateBalance()" style="margin-top:10px;">Update Balance</button>
+
+<hr>
+
+<p>USDT Address:</p>
+<input id="usdtInput" style="width:100%;padding:10px">
+
+<button onclick="updateUSDT()" style="margin-top:10px;">Update Address</button>
+
+<hr>
+
+<h3>📥 Deposits</h3>
+<div id="depositList"></div>
+
+<hr>
+
+<h3>📤 Withdraw Requests</h3>
+<div id="withdrawList"></div>
+
+</div>
+
+</div>
+`;
+
+loadWalletUsers();
+}
+
+if(page === 'support'){
+    // مسح الـ badge عند فتح صفحة Support
+    adminFetch("/all-chats").then(r => r.json()).then(data => {
+        let allMsgs = Object.values(data).flat();
+        if(allMsgs.length > 0){
+            let maxId = Math.max(...allMsgs.map(m => m.id || 0));
+            _adminLastSeenSupport = maxId;
+            localStorage.setItem("adminLastSeenSupport", maxId);
+        }
+        let badge = document.getElementById("adminSupportBadge");
+        if(badge) badge.style.display = "none";
+    }).catch(()=>{});
+
+    document.getElementById("content").innerHTML = `
+        <h2>💬 Support Chats</h2>
+
+        <input id="searchEmail" placeholder="Search by email..." 
+        style="width:60%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #ccc;">
+
+        <button onclick="searchUser()" style="padding:10px 15px;">Search</button>
+
+       <div id="chatList"></div>
+
+        <hr>
+
+        <div id="chatBox" style="display:none;">
+            <h3 id="chatUser"></h3>
+
+            <div id="messages" style="height:300px;overflow:auto;border:1px solid #ccc;padding:10px;"></div>
+
+            <div style="display:flex;gap:8px;align-items:flex-end;margin-top:8px;">
+              <label for="adminImgInput" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:8px;background:#e3f2fd;flex-shrink:0;" title="Send image">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1976d2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              </label>
+              <input type="file" id="adminImgInput" accept="image/*" style="display:none;" onchange="sendAdminImage(this)">
+              <textarea id="reply" placeholder="Type reply..." rows="1"
+                style="flex:1;padding:10px;border:1px solid #ccc;border-radius:8px;resize:none;overflow-y:hidden;max-height:120px;font-family:Arial;font-size:14px;line-height:1.4;"
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendReply();} else { setTimeout(function(){var el=document.getElementById('reply');el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';},0); }"></textarea>
+              <button onclick="sendReply()" style="padding:10px 18px;background:#1976d2;color:white;border:none;border-radius:8px;cursor:pointer;flex-shrink:0;">Send</button>
+            </div>
+        </div>
+    `;
+    loadSupportChats();
+}
+
+function searchUser(){
+
+    let email = document.getElementById("searchEmail").value.trim();
+
+    if(!email){
+        alert("Enter email");
+        return;
+    }
+
+    openChat(email);
+}
+
+
+// تحميل المحادثات - يُستدعى من داخل صفحة Support
+let _allChatsData = {};
+let _chatPollInterval = null;
+
+function loadSupportChats(){
+    adminFetch("/all-chats")
+    .then(res => res.json())
+    .then(data => {
+        _allChatsData = data;
+        let list = document.getElementById("chatList");
+        if(!list) return;
+        list.innerHTML = "";
+
+        for(let email in data){
+            let div = document.createElement("div");
+            div.style.padding = "10px";
+            div.style.borderBottom = "1px solid #ccc";
+            div.style.cursor = "pointer";
+            div.innerText = email;
+            div.onclick = () => openChat(email);
+            list.appendChild(div);
+        }
+        if(currentChat) renderMessages(_allChatsData[currentChat] || []);
+    }).catch(()=>{});
+}
+// ORDERS
+if(page === "orders"){
+document.getElementById("content").innerHTML = `
+<div class="card">
+  <h2>&#128230; Orders Management</h2>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px;">
+    <input id="orderSearchEmail" placeholder="Search by seller/buyer email..." oninput="loadAllOrders()" style="flex:1;padding:10px;border-radius:8px;border:1px solid #ccc;min-width:180px;">
+    <select id="orderStatusFilter" onchange="loadAllOrders()" style="padding:10px;border-radius:8px;border:1px solid #ccc;">
+      <option value="">All Statuses</option>
+      <option value="waiting_shipping">⏳ Waiting Shipping</option>
+      <option value="in_delivery">🚚 In Delivery</option>
+      <option value="waiting_refund">📬 Arrived - Waiting Confirm</option>
+      <option value="completed">✅ Completed</option>
+    </select>
+    <button onclick="loadAllOrders()" style="padding:10px 18px;background:#1976d2;color:white;border:none;border-radius:8px;cursor:pointer;">&#128269; Search</button>
+    <button onclick="restoreHiddenOrders()" title="استرجاع الطلبات المخفية" style="padding:10px 14px;background:#ff9800;color:white;border:none;border-radius:8px;cursor:pointer;">&#128257; Restore Hidden</button>
+  </div>
+  <details style="margin-bottom:15px;">
+    <summary style="cursor:pointer;font-weight:bold;padding:10px;background:#f0f0f0;border-radius:8px;">&#10133; Add Manual Order</summary>
+    <div style="padding:15px;border:1px solid #ddd;border-radius:8px;margin-top:8px;display:grid;gap:10px;">
+      <input id="newOrderEmail" placeholder="Seller Email" style="padding:10px;border-radius:8px;border:1px solid #ccc;">
+      <input id="newOrderTitle" placeholder="Product Title" style="padding:10px;border-radius:8px;border:1px solid #ccc;">
+      <input id="newOrderPrice" placeholder="Retail Price ($)" type="number" style="padding:10px;border-radius:8px;border:1px solid #ccc;">
+      <input id="newOrderQty" placeholder="Quantity" type="number" value="1" style="padding:10px;border-radius:8px;border:1px solid #ccc;">
+      <button onclick="addManualOrder()" style="padding:10px;background:#28a745;color:white;border:none;border-radius:8px;cursor:pointer;">&#10003; Create Order</button>
+    </div>
+  </details>
+  <div id="adminOrdersList">Loading...</div>
+</div>
+`;
+loadAllOrders();
+}
+
+// SUPPORT
+if(page === "support_old"){
+document.getElementById("content").innerHTML = `
+<div class="card">
+<h2>Support Messages</h2>
+
+<div style="background:#eee;padding:10px;margin:10px 0;">
+<p>User: Hello I need help</p>
+<input placeholder="Reply..." style="width:100%;padding:8px">
+<button>Send</button>
+</div>
+
+</div>
+`;
+}
+
+}
+
+
+function saveCode(){
+    let code = document.getElementById("inviteCode").value.trim();
+    let msg = document.getElementById("codeMsg");
+    if(!code || code.length < 3){
+        if(msg) msg.innerHTML = "<span style='color:red;'>❌ Code must be at least 3 characters</span>";
+        return;
+    }
+    adminFetch("/set-invite-code", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ code: code })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.success){
+            var display = document.getElementById("currentCodeDisplay");
+            if(display) display.innerText = data.code;
+            document.getElementById("inviteCode").value = "";
+            if(msg) msg.innerHTML = "<span style='color:green;'>✅ Invite code updated to: <b>" + data.code + "</b></span>";
+        } else {
+            if(msg) msg.innerHTML = "<span style='color:red;'>❌ " + (data.message||"Error") + "</span>";
+        }
+    })
+    .catch(() => { if(msg) msg.innerHTML = "<span style='color:red;'>❌ Failed to connect to server</span>"; });
+}
+
+function saveBackupCode(){
+    var code = document.getElementById("backupCodeInput").value.trim();
+    var msg  = document.getElementById("backupCodeMsg");
+    if(!code || code.length < 3){
+        if(msg) msg.innerHTML = "<span style='color:red;'>❌ Code must be at least 3 characters</span>";
+        return;
+    }
+    adminFetch("/set-backup-code", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ code: code })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.success){
+            var display = document.getElementById("currentBackupDisplay");
+            if(display) display.innerText = data.code;
+            document.getElementById("backupCodeInput").value = "";
+            if(msg) msg.innerHTML = "<span style='color:green;'>✅ Backup code updated to: <b>" + data.code + "</b></span>";
+        } else {
+            if(msg) msg.innerHTML = "<span style='color:red;'>❌ Failed to update</span>";
+        }
+    })
+    .catch(() => { if(msg) msg.innerHTML = "<span style='color:red;'>❌ Failed to connect to server</span>"; });
+}
+
+let currentChat = "";
+
+// فتح محادثة
+function openChat(email){
+    currentChat = email;
+    document.getElementById("chatBox").style.display = "block";
+    document.getElementById("chatUser").innerText = email;
+    renderMessages(_allChatsData[email] || []);
+    if(_chatPollInterval) clearInterval(_chatPollInterval);
+    _chatPollInterval = setInterval(loadMessages, 3000);
+}
+
+// تحميل الرسائل
+function loadMessages(){
+    adminFetch("/all-chats")
+    .then(res => res.json())
+    .then(chats => {
+        _allChatsData = chats;
+        renderMessages(chats[currentChat] || []);
+    });
+}
+
+function renderMessages(data){
+        let box = document.getElementById("messages");
+        if(!box) return;
+        box.innerHTML = "";
+
+        data.forEach(m => {
+            let div = document.createElement("div");
+            div.style.margin = "5px";
+
+            if(m.sender === "admin"){
+                div.style.textAlign = "right";
+                let readTick = m.seen
+                    ? "<span style='font-size:11px;color:#4fc3f7;margin-left:4px;'>✓✓</span>"
+                    : "<span style='font-size:11px;color:#aaa;margin-left:4px;'>✓</span>";
+                if(m.img){
+                    div.innerHTML = "<b>You:</b><br><img src='" + m.img + "' style='max-width:200px;max-height:200px;border-radius:8px;display:inline-block;cursor:pointer;' onclick='openLightbox(this.src)'> " + readTick;
+                } else {
+                    div.innerHTML = "<b>You:</b> <span style='white-space:pre-wrap;word-break:break-word;'>" + sanitize(m.text) + "</span> " + readTick;
+                }
+            } else {
+                if(m.img){
+                    div.innerHTML = "<b>User:</b><br><img src='" + m.img + "' style='max-width:200px;max-height:200px;border-radius:8px;display:inline-block;cursor:pointer;' onclick='openLightbox(this.src)'>";
+                } else {
+                    div.innerHTML = "<b>User:</b> <span style='white-space:pre-wrap;word-break:break-word;'>" + sanitize(m.text) + "</span>";
+                }
+            }
+
+            box.appendChild(div);
+        });
+
+        box.scrollTop = box.scrollHeight;
+
+        // تعليم رسائل المستخدم كمقروءة
+        adminFetch("/mark-seen", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ email: currentChat })
+        }).catch(()=>{});
+}
+
+function sendReply(){
+    let el = document.getElementById("reply");
+    let text = el.value;
+
+    if(!text || !text.trim()) return;
+
+    adminFetch("/send-message", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+               email: currentChat,
+               text: text,
+               sender: "admin"
+             })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success){
+            el.value = "";
+            el.style.height = "auto";
+            loadMessages();
+        } else {
+            alert("Error sending ❌");
+        }
+    });
+}
+
+function sendAdminImage(input){
+    if(!input.files || !input.files[0] || !currentChat) return;
+    let file = input.files[0];
+    if(file.size > 5 * 1024 * 1024){ alert("Image too large (max 5MB)"); return; }
+    let reader = new FileReader();
+    reader.onload = function(e){
+        let imgData = e.target.result;
+        adminFetch("/send-message", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ email: currentChat, text: "", img: imgData, sender: "admin" })
+        })
+        .then(r => r.json())
+        .then(d => {
+            if(d.success){ loadMessages(); }
+            else { alert("Error sending image ❌"); }
+        });
+        input.value = "";
+    };
+    reader.readAsDataURL(file);
+}
+
+function searchUser(){
+
+    let email = document.getElementById("searchEmail").value.trim();
+
+    if(!email){
+        alert("Enter email");
+        return;
+    }
+
+    let list = document.getElementById("chatList");
+
+    let div = document.createElement("div");
+    div.style.padding = "10px";
+    div.style.borderBottom = "1px solid #ccc";
+    div.style.cursor = "pointer";
+
+    div.innerText = email;
+
+    div.onclick = () => openChat(email);
+
+    list.prepend(div);
+
+    openChat(email);
+}
+
+// بيانات المستخدمين من السيرفر فقط
+let walletData = [];
+
+// عرض المستخدمين
+async function loadWalletUsers(){
+
+    let res = await adminFetch("/admin/users");
+    let data = await res.json();
+
+    walletData = data;
+
+    // جلب الطلبات المعلقة لكل مستخدم
+    let pendingMap = {};
+    try {
+        let reqRes = await adminFetch("/all-requests");
+        let reqs = await reqRes.json();
+        reqs.forEach(r => {
+            if(r.status === "pending") {
+                pendingMap[r.email] = (pendingMap[r.email] || 0) + 1;
+            }
+        });
+    } catch(e){}
+
+    let container = document.getElementById("walletUsers");
+    container.innerHTML = "";
+
+    // فصل المستخدمين: من لديهم طلبات ومن ليس لديهم
+    let usersWithRequests = walletData.filter(u => pendingMap[u.email] > 0);
+    let usersWithoutRequests = walletData.filter(u => !pendingMap[u.email]);
+
+    function renderUserRow(user){
+        let div = document.createElement("div");
+        div.style.padding = "10px";
+        div.style.margin = "5px 0";
+        div.style.background = "#eee";
+        div.style.cursor = "pointer";
+        div.style.display = "flex";
+        div.style.justifyContent = "space-between";
+        div.style.alignItems = "center";
+        div.style.borderRadius = "8px";
+
+        let count = pendingMap[user.email] || 0;
+        let badgeHtml = count > 0
+            ? `<span style="background:#ff3b30;color:white;font-size:11px;font-weight:bold;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px;flex-shrink:0;">${count}</span>`
+            : "";
+
+        div.innerHTML = `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${user.email}</span>${badgeHtml}`;
+        div.onclick = () => openWallet(user.email);
+        return div;
+    }
+
+    // عرض المستخدمين الذين لديهم طلبات أولاً
+    if(usersWithRequests.length > 0){
+        usersWithRequests.forEach(u => container.appendChild(renderUserRow(u)));
+    } else {
+        let noReq = document.createElement("p");
+        noReq.style.color = "#999";
+        noReq.style.fontSize = "13px";
+        noReq.innerText = "No pending requests.";
+        container.appendChild(noReq);
+    }
+
+    // باقي المستخدمين في قسم مخفي
+    if(usersWithoutRequests.length > 0){
+        let toggle = document.createElement("div");
+        toggle.style.cssText = "cursor:pointer;padding:10px 14px;background:#e3f2fd;border-radius:8px;margin-top:10px;font-weight:bold;color:#1565c0;display:flex;justify-content:space-between;align-items:center;font-size:13px;";
+        toggle.innerHTML = `<span>📁 All Users (${usersWithoutRequests.length})</span><span id="walletOldArrow">▼ Show</span>`;
+
+        let oldContainer = document.createElement("div");
+        oldContainer.id = "walletOldContainer";
+        oldContainer.style.display = "none";
+        usersWithoutRequests.forEach(u => oldContainer.appendChild(renderUserRow(u)));
+
+        toggle.onclick = function(){
+            if(oldContainer.style.display === "none"){
+                oldContainer.style.display = "block";
+                document.getElementById("walletOldArrow").innerText = "▲ Hide";
+            } else {
+                oldContainer.style.display = "none";
+                document.getElementById("walletOldArrow").innerText = "▼ Show";
+            }
+        };
+
+        container.appendChild(toggle);
+        container.appendChild(oldContainer);
+    }
+}
+
+// فتح لوحة المستخدم
+let currentWalletUser = null;
+
+async function openWallet(email){
+
+    let res = await adminFetch("/admin/users");
+    let data = await res.json();
+
+    walletData = data;
+
+    let user = walletData.find(u => u.email === email);
+    currentWalletUser = user;
+
+    if(!user) return;
+
+    document.getElementById("walletPanel").style.display = "block";
+    document.getElementById("walletUserEmail").innerText = email;
+
+    document.getElementById("balanceInput").value = user.balance;
+    document.getElementById("usdtInput").value = user.usdt || "";
+
+    loadDeposits();
+    loadWithdraws();
+}
+
+// تحديث الرصيد
+async function updateBalance(){
+
+    let newBalance = document.getElementById("balanceInput").value;
+
+    console.log("Sending:", currentWalletUser.email, newBalance);
+
+    let res = await adminFetch("/update-balance", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            email: currentWalletUser.email,
+            balance: Number(newBalance)
+        })
+    });
+
+    let data = await res.text();
+    alert("Balance updated ✅");
+
+    await loadWalletUsers();
+    await openWallet(currentWalletUser.email);
+ } 
+
+// تحديث عنوان USDT
+function updateUSDT(){
+    let newUSDT = document.getElementById("usdtInput").value;
+
+    if(!currentWalletUser) return;
+
+    adminFetch("/admin-update-usdt", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            email: currentWalletUser.email,
+            usdt: newUSDT
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success){
+            alert("USDT updated ✅");
+
+            // إعادة تحميل البيانات
+            openWallet(currentWalletUser.email);
+        } else {
+            alert("Error ❌");
+        }
+    });
+}
+// عرض الإيداعات
+async function loadDeposits(){
+    let container = document.getElementById("depositList");
+    container.innerHTML = "";
+
+    let res = await adminFetch("/all-requests");
+    let data = await res.json();
+
+    let deposits = data.filter(r => r.type === "recharge" && r.email === currentWalletUser.email);
+
+    if(deposits.length === 0){
+        container.innerHTML = "<p>No deposits</p>";
+        return;
+    }
+
+    deposits.forEach((dep) => {
+
+        let div = document.createElement("div");
+        div.style.border = "1px solid #ccc";
+        div.style.padding = "10px";
+        div.style.margin = "10px 0";
+
+        div.innerHTML = `
+        <div style="display:flex;gap:15px;align-items:center;">
+
+            <img src="${dep.image}" 
+            onerror="this.src='https://dummyimage.com/200x120/000/fff.png&text=No+Image'" 
+            width="120" 
+            onclick="openLightbox(this.src)"
+            style="border-radius:10px;border:1px solid #ccc;cursor:zoom-in;">
+
+            <div>
+                <p><b>Amount:</b> ${dep.amount}$</p>
+                <p><b>Status:</b> ${dep.status}</p>
+
+                <button class="approve" onclick="approveDeposit(${dep.id})">Approve</button>
+                <button class="reject" onclick="rejectDeposit(${dep.id})">Reject</button>
+            </div>
+
+        </div>
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+// حذف الطلب بعد الموافقة أو الرفض
+function deleteRequest(id){
+    adminFetch("/delete-request", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ id: id })
+    }).catch(err => console.log("deleteRequest error:", err));
+}
+
+// موافقة
+function approveDeposit(id){
+
+    adminFetch("/approve/" + id)
+    .then(res => res.text())
+    .then(data => {
+        alert(data);
+        deleteRequest(id);
+        loadDeposits();
+    })
+    .catch(err => {
+        console.log(err);
+        alert("Error ❌");
+    });
+
+}
+
+// رفض
+function rejectDeposit(id){
+
+    adminFetch("/reject/" + id)
+    .then(res => res.text())
+    .then(data => {
+        alert(data);
+        deleteRequest(id);
+        loadDeposits();
+    })
+    .catch(err => {
+        console.log(err);
+        alert("Error ❌");
+    });
+
+}
+
+// عرض طلبات السحب
+async function loadWithdraws(){
+
+    let container = document.getElementById("withdrawList");
+    container.innerHTML = "";
+
+    let res = await adminFetch("/all-requests");
+    let data = await res.json();
+
+    let withdraws = data.filter(r => 
+        r.type === "withdraw" && r.email === currentWalletUser.email
+    );
+
+    if(withdraws.length === 0){
+        container.innerHTML = "<p>No withdraw requests</p>";
+        return;
+    }
+
+    withdraws.forEach((w) => {
+
+        let div = document.createElement("div");
+        div.style.border = "1px solid #ccc";
+        div.style.padding = "10px";
+        div.style.margin = "10px 0";
+
+div.innerHTML = `
+    <p><b>Amount:</b> ${w.amount}$</p>
+    <p><b>Status:</b> ${w.status}</p>
+    <p><b>USDT Address:</b> ${w.address || "Not provided"}</p>
+
+    <button class="approve" onclick="approveWithdraw(${w.id})">Approve</button>
+    <button class="reject" onclick="rejectWithdraw(${w.id})">Reject</button>
+`;
+
+        container.appendChild(div);
+    });
+}
+
+// موافقة السحب
+function approveWithdraw(id){
+
+    adminFetch("/approve/" + id)
+    .then(res => res.text())
+    .then(data => {
+        alert(data);
+        deleteRequest(id);
+        loadWithdraws();
+    })
+    .catch(err => {
+        console.log(err);
+        alert("Error ❌");
+    });
+
+}
+
+function rejectWithdraw(id){
+
+    adminFetch("/reject/" + id)
+    .then(res => res.text())
+    .then(data => {
+        alert(data);
+        deleteRequest(id);
+        loadWithdraws();
+    })
+    .catch(err => {
+        console.log(err);
+        alert("Error ❌");
+    });
+
+}
+
+// ================= STORE APPLICATIONS =================
+async function loadStoreApplications(){
+    let res = await adminFetch("/all-store-applications");
+    let apps = await res.json();
+
+    let container = document.getElementById("storeList");
+
+    if(apps.length === 0){
+        container.innerHTML = "<p style='color:#999;'>No applications yet.</p>";
+        return;
+    }
+
+    container.innerHTML = "";
+
+    let pendingApps  = apps.filter(function(a){ return a.status === "pending"; });
+    let approvedApps = apps.filter(function(a){ return a.status !== "pending"; });
+
+    function renderApp(app){
+        let statusColor = app.status === "approved" ? "green" : app.status === "rejected" ? "red" : "orange";
+        let statusLabel = app.status === "approved" ? "✅ Approved" : app.status === "rejected" ? "❌ Rejected" : "⏳ Pending";
+
+        let div = document.createElement("div");
+        div.style.border = "1px solid #ddd";
+        div.style.borderRadius = "12px";
+        div.style.padding = "15px";
+        div.style.marginBottom = "15px";
+        div.style.background = "#fafafa";
+
+        div.innerHTML = `
+        <div style="display:flex;gap:15px;align-items:center;margin-bottom:10px;">
+            <img src="${app.storeLogo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" 
+                 style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:1px solid #ddd;cursor:pointer;"
+                 onclick="openLightbox(this.src)">
+            <div>
+                <b style="font-size:16px;">🏪 ${app.storeName}</b><br>
+                <span style="color:${statusColor};font-weight:bold;">${statusLabel}</span><br>
+                <small style="color:#666;">${app.submittedAt || ""}</small>
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;margin-bottom:10px;">
+            <div><b>📧 Email:</b> ${app.email}</div>
+            <div><b>📩 Contact:</b> ${app.contactEmail || app.email}</div>
+            <div><b>🏷 Type:</b> ${app.storeType || "-"}</div>
+            <div><b>🌍 Nationality:</b> ${app.nationality || "-"}</div>
+            <div><b>🪪 Personal ID:</b> ${app.personalId || "-"}</div>
+            <div><b>🔢 ID Number:</b> ${app.idNumber || "-"}</div>
+            <div><b>📅 Cert Validity:</b> ${app.certValidity || "-"}</div>
+            <div><b>🏛 Issuing Country:</b> ${app.issuingCountry || "-"}</div>
+            <div><b>👤 Name:</b> ${app.name || "-"}</div>
+            <div><b>🎂 Date of Birth:</b> ${app.dateOfBirth || "-"}</div>
+            <div><b>📍 City:</b> ${app.city || "-"}</div>
+            <div><b>🏠 Street:</b> ${app.street || "-"}</div>
+            <div><b>📮 Postal Code:</b> ${app.postalCode || "-"}</div>
+            <div><b>🏙 Residence:</b> ${app.placeOfResidence || "-"}</div>
+        </div>
+
+        <div style="display:flex;gap:15px;margin-bottom:10px;">
+            ${app.idFront ? `<div><b>ID Front:</b><br><img src="${app.idFront}" onclick="openLightbox(this.src)" style="width:120px;border-radius:8px;border:1px solid #ccc;margin-top:5px;cursor:zoom-in;"></div>` : '<div><b>ID Front:</b> Not uploaded</div>'}
+            ${app.idBack ? `<div><b>ID Back:</b><br><img src="${app.idBack}" onclick="openLightbox(this.src)" style="width:120px;border-radius:8px;border:1px solid #ccc;margin-top:5px;cursor:zoom-in;"></div>` : '<div><b>ID Back:</b> Not uploaded</div>'}
+        </div>
+
+        ${app.status === "pending" ? `
+        <div style="display:flex;gap:10px;margin-top:10px;">
+            <button class="approve" onclick="approveStore('${app.email}')" style="flex:1;padding:10px;font-size:14px;">✅ Approve Store</button>
+            <button class="reject" onclick="rejectStore('${app.email}')" style="flex:1;padding:10px;font-size:14px;">❌ Reject Store</button>
+        </div>
+        ` : `<div style="text-align:center;color:${statusColor};font-weight:bold;padding:10px;">${statusLabel}</div>`}
+        <div style="margin-top:8px;text-align:right;">
+            <button onclick="deleteStoreApplication('${app.email}')" style="padding:8px 18px;background:#ff3b30;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;">🗑️ Delete Application</button>
+        </div>
+        `;
+
+        return div;
+    }
+
+    // عرض المتاجر المعلقة أولاً
+    if(pendingApps.length > 0){
+        pendingApps.forEach(function(app){ container.appendChild(renderApp(app)); });
+    } else {
+        let noP = document.createElement("p");
+        noP.style.color = "#999";
+        noP.innerText = "No pending applications.";
+        container.appendChild(noP);
+    }
+
+    // قسم المتاجر الموافق عليها / المرفوضة - مخفي بشكل افتراضي
+    if(approvedApps.length > 0){
+        let toggle = document.createElement("div");
+        toggle.style.cssText = "cursor:pointer;padding:12px 16px;background:#e8f5e9;border-radius:10px;margin-bottom:15px;font-weight:bold;color:#2e7d32;display:flex;justify-content:space-between;align-items:center;";
+        toggle.innerHTML = "📁 Processed Applications (" + approvedApps.length + ") <span id='toggleArrow'>▼ Show</span>";
+
+        let approvedContainer = document.createElement("div");
+        approvedContainer.id = "approvedContainer";
+        approvedContainer.style.display = "none";
+
+        approvedApps.forEach(function(app){ approvedContainer.appendChild(renderApp(app)); });
+
+        toggle.onclick = function(){
+            if(approvedContainer.style.display === "none"){
+                approvedContainer.style.display = "block";
+                document.getElementById("toggleArrow").innerText = "▲ Hide";
+            } else {
+                approvedContainer.style.display = "none";
+                document.getElementById("toggleArrow").innerText = "▼ Show";
+            }
+        };
+
+        container.appendChild(toggle);
+        container.appendChild(approvedContainer);
+    }
+}
+
+async function approveStore(email){
+    if(!confirm("Approve this store?")) return;
+
+    let res = await adminFetch("/approve-store", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ email: email })
+    });
+    let data = await res.json();
+
+    if(data.success){
+        alert("Store approved ✅");
+        loadStoreApplications();
+    } else {
+        alert("Error ❌");
+    }
+}
+
+async function rejectStore(email){
+    if(!confirm("Reject this store?")) return;
+
+    let res = await adminFetch("/reject-store", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ email: email })
+    });
+    let data = await res.json();
+
+    if(data.success){
+        alert("Store rejected ❌");
+        loadStoreApplications();
+    } else {
+        alert("Error ❌");
+    }
+}
+
+// ===== LOGS FUNCTIONS =====
+var _allLogs = [];
+
+async function loadLogs(){
+    let container = document.getElementById("logsList");
+    try {
+        let res = await adminFetch("/admin/logs");
+        let data = await res.json();
+        _allLogs = data;
+        renderLogs(_allLogs);
+    } catch(e) {
+        if(container) container.innerHTML = "<p style='color:red;'>Failed to load logs.</p>";
+    }
+}
+
+function renderLogs(logs){
+    let container = document.getElementById("logsList");
+    if(!container) return;
+    if(logs.length === 0){
+        container.innerHTML = "<p style='color:#999;text-align:center;padding:20px;'>No logs found.</p>";
+        return;
+    }
+    let colors = {
+        login:"#e8f5e9", login_failed:"#ffebee", register:"#e3f2fd",
+        admin_login:"#f3e5f5", admin_login_failed:"#ffebee",
+        deposit_approved:"#e8f5e9", withdraw_approved:"#fff3e0",
+        request_rejected:"#ffebee"
+    };
+    container.innerHTML = logs.map(l => `
+        <div style="padding:10px 14px;border-radius:8px;margin-bottom:6px;background:${colors[l.type]||'#f5f5f5'};font-size:13px;">
+            <span style="color:#999;font-size:11px;">${l.time}</span>
+            <b style="margin-left:8px;">${l.type}</b>
+            <span style="margin-left:8px;color:#333;">${l.details}</span>
+            ${l.email ? `<span style="color:#1976d2;margin-left:8px;">(${l.email})</span>` : ""}
+        </div>
+    `).join("");
+}
+
+function filterLogs(){
+    let search = (document.getElementById("logSearch")?.value || "").toLowerCase();
+    let type   = document.getElementById("logType")?.value || "";
+    let filtered = _allLogs.filter(l => {
+        let matchType   = !type   || l.type === type;
+        let matchSearch = !search || l.details.toLowerCase().includes(search) || (l.email||"").toLowerCase().includes(search);
+        return matchType && matchSearch;
+    });
+    renderLogs(filtered);
+}
+
+async function deleteStoreApplication(email){
+    if(!confirm("Delete this application permanently? This cannot be undone.")) return;
+
+    let res = await adminFetch("/delete-store-application", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ email: email })
+    });
+    let data = await res.json();
+
+    if(data.success){
+        alert("Application deleted 🗑️");
+        loadStoreApplications();
+    } else {
+        alert("Error ❌");
+    }
+}
+
+
+
+// ===== ORDERS ADMIN FUNCTIONS =====
+
+// طلبات مخفية - تُحفظ في localStorage حتى تبقى بعد التحديث
+function _loadHiddenOrders(){
+  try {
+    var saved = localStorage.getItem("adminHiddenOrders");
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  } catch(e){ return new Set(); }
+}
+function _saveHiddenOrders(){
+  try {
+    localStorage.setItem("adminHiddenOrders", JSON.stringify(Array.from(_hiddenOrders)));
+  } catch(e){}
+}
+var _hiddenOrders = _loadHiddenOrders();
+
+function dismissOrder(orderId) {
+  _hiddenOrders.add(orderId);
+  _saveHiddenOrders();
+  var el = document.getElementById('order_card_' + orderId);
+  if (el) {
+    el.style.transition = 'opacity 0.25s, max-height 0.3s';
+    el.style.opacity = '0';
+    setTimeout(function(){ el.style.display = 'none'; }, 280);
+  }
+}
+
+var _sLabels = {
+  waiting_shipping:'⏳ Waiting Shipping',
+  in_delivery:'🚚 In Delivery',
+  waiting_refund:'📬 Arrived - Waiting Confirm',
+  completed:'✅ Completed'
+};
+var _sBg = {
+  waiting_shipping:'#fff3cd',
+  in_delivery:'#cce5ff',
+  waiting_refund:'#d4edda',
+  completed:'#d1ecf1'
+};
+var _sCol = {
+  waiting_shipping:'#856404',
+  in_delivery:'#004085',
+  waiting_refund:'#155724',
+  completed:'#0c5460'
+};
+
+function restoreHiddenOrders(){
+  if(!confirm('هل تريد استرجاع جميع الطلبات المخفية؟')) return;
+  _hiddenOrders.clear();
+  _saveHiddenOrders();
+  loadAllOrders();
+}
+
+async function loadAllOrders(){
+  var container = document.getElementById('adminOrdersList');
+  if(!container) return;
+  container.innerHTML = '<p style="color:#999;text-align:center;padding:20px;">Loading...</p>';
+  try {
+    var res = await adminFetch('/admin-store-orders');
+    var data = await res.json();
+    var orders = (data.orders || []).slice().reverse();
+
+    var emailF  = (document.getElementById('orderSearchEmail')||{}).value||'';
+    var statusF = (document.getElementById('orderStatusFilter')||{}).value||'';
+    if(emailF)  orders = orders.filter(function(o){ return (o.sellerEmail||'').toLowerCase().includes(emailF.toLowerCase()) || (o.buyerEmail||'').toLowerCase().includes(emailF.toLowerCase()); });
+    if(statusF) orders = orders.filter(function(o){ return o.status === statusF; });
+
+    // إخفاء الطلبات المكتملة تلقائياً + الطلبات التي ضغط عليها الأدمن X
+    orders = orders.filter(function(o){ return o.status !== 'completed' && !_hiddenOrders.has(o.id); });
+
+    if(orders.length === 0){
+      container.innerHTML = '<p style="color:#999;text-align:center;padding:30px;">No orders found.</p>';
+      return;
+    }
+
+    container.innerHTML = orders.map(function(o){
+      var bg  = _sBg[o.status]  || '#eee';
+      var col = _sCol[o.status] || '#333';
+      var lbl = _sLabels[o.status] || o.status;
+      var productTitle = (o.product && o.product.title) ? o.product.title : 'Unknown Product';
+      var retailPrice  = parseFloat(o.total || 0).toFixed(2);
+      var supplierPrice= parseFloat((o.supplierPrice||0) * (o.quantity||1)).toFixed(2);
+      var profit       = parseFloat((o.profit||0) * (o.quantity||1)).toFixed(2);
+      var isCompleted  = o.status === 'completed';
+
+      var opts = ['waiting_shipping','in_delivery','waiting_refund','completed'].map(function(s){
+        return '<option value="'+s+'"'+(o.status===s?' selected':'')+'>'+_sLabels[s]+'</option>';
+      }).join('');
+
+      // زر X يظهر فقط للطلبات المكتملة
+      var dismissBtn = isCompleted
+        ? '<button onclick="dismissOrder(\''+o.id+'\')" title="إخفاء من القائمة" style="'+
+            'width:22px;height:22px;border-radius:50%;border:none;background:#ff3b30;color:white;'+
+            'font-size:13px;font-weight:bold;line-height:1;cursor:pointer;padding:0;flex-shrink:0;'+
+            'display:flex;align-items:center;justify-content:center;">✕</button>'
+        : '';
+
+      return '<div id="order_card_'+o.id+'" style="border:1px solid #ddd;border-radius:12px;padding:15px;margin-bottom:12px;background:#fafafa;">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:10px;">'+
+          '<div>'+
+            '<div style="font-weight:bold;font-size:14px;margin-bottom:3px;">'+sanitize(productTitle)+'</div>'+
+            '<div style="color:#666;font-size:12px;">🏪 Seller: '+sanitize(o.sellerEmail||'-')+'</div>'+
+            '<div style="color:#666;font-size:12px;">🛒 Buyer: '+sanitize(o.buyerEmail||'-')+'</div>'+
+            '<div style="font-size:12px;margin-top:4px;">'+
+              '<span style="color:#e65100;">Supplier: $'+supplierPrice+'</span> &nbsp;'+
+              '<span style="color:#1976d2;">Retail: $'+retailPrice+'</span> &nbsp;'+
+              '<span style="color:#2e7d32;font-weight:bold;">Profit: $'+profit+'</span>'+
+            '</div>'+
+            '<div style="font-size:11px;color:#999;margin-top:2px;">'+sanitize(o.createdAt||'')+'</div>'+
+          '</div>'+
+          '<div style="display:flex;align-items:center;gap:8px;">'+
+            '<span style="background:'+bg+';color:'+col+';padding:4px 12px;border-radius:20px;font-size:12px;font-weight:bold;white-space:nowrap;">'+lbl+'</span>'+
+            dismissBtn+
+          '</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">'+
+          '<select id="sel_'+o.id+'" style="padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;flex:1;">'+opts+'</select>'+
+          '<button onclick="updateStoreOrderStatus(\''+o.id+'\')" style="padding:8px 18px;background:#1976d2;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">✏️ Update</button>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+
+  } catch(e) {
+    container.innerHTML = '<p style="color:red;text-align:center;padding:20px;">Error loading orders.</p>';
+  }
+}
+
+async function updateStoreOrderStatus(orderId){
+  var selEl = document.getElementById('sel_'+orderId);
+  if(!selEl) return;
+  var status = selEl.value;
+  if(!confirm('Update order to: ' + (_sLabels[status]||status) + '?')) return;
+  try {
+    var res = await adminFetch('/admin-update-order-status', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ orderId: orderId, status: status })
+    });
+    var data = await res.json();
+    if(data.success){
+      alert('Order updated ✅' + (status === 'completed' ? '\nProfit credited to seller wallet!' : ''));
+      loadAllOrders();
+    } else {
+      alert('Error: ' + (data.message||'Unknown error'));
+    }
+  } catch(e) {
+    alert('Connection error ❌');
+  }
+}
+
+async function addManualOrder(){
+  var sellerEmail = document.getElementById('newOrderEmail').value.trim();
+  var title       = document.getElementById('newOrderTitle').value.trim();
+  var price       = parseFloat(document.getElementById('newOrderPrice').value)||0;
+  var qty         = parseInt(document.getElementById('newOrderQty').value)||1;
+  if(!sellerEmail||!title){ alert('Please enter seller email and product title'); return; }
+
+  // حساب سعر المورد والربح (VIP 0 = 15% discount)
+  var supplierPrice = parseFloat((price * 0.85).toFixed(2));
+  var profit        = parseFloat((price - supplierPrice).toFixed(2));
+
+  var order = {
+    id: 'ORD' + Date.now(),
+    buyerEmail: 'customer@tiktok.com',
+    sellerEmail: sellerEmail,
+    product: { id: Date.now(), title: title, price: price, folder:'', category_id:27 },
+    quantity: qty,
+    total: parseFloat((price * qty).toFixed(2)),
+    supplierPrice: supplierPrice,
+    profit: profit,
+    status: 'waiting_shipping',
+    createdAt: new Date().toISOString(),
+    shippedAt: null,
+    deliveryStart: null,
+    completedAt: null,
+    trackingPath: null
+  };
+
+  try {
+    var res = await adminFetch('/admin-create-store-order', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(order)
+    });
+    var data = await res.json();
+    if(data.success){ alert('Order created ✅'); loadAllOrders(); }
+    else { alert('Error: ' + (data.message||'Unknown')); }
+  } catch(e) {
+    alert('Connection error ❌');
+  }
+}
+</script>
+
+<!-- LIGHTBOX -->
+<div id="imgLightbox" onclick="closeLightbox()" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.88);z-index:99999;justify-content:center;align-items:center;cursor:zoom-out;">
+  <img id="imgLightboxSrc" src="" style="max-width:92%;max-height:90vh;border-radius:12px;box-shadow:0 0 40px rgba(0,0,0,0.8);object-fit:contain;">
+  <div onclick="closeLightbox()" style="position:absolute;top:18px;right:24px;color:white;font-size:32px;font-weight:bold;cursor:pointer;line-height:1;">✕</div>
+</div>
+
+<script>
+function openLightbox(src){
+  document.getElementById("imgLightboxSrc").src = src;
+  var lb = document.getElementById("imgLightbox");
+  lb.style.display = "flex";
+}
+function closeLightbox(){
+  document.getElementById("imgLightbox").style.display = "none";
+  document.getElementById("imgLightboxSrc").src = "";
+}
+document.addEventListener("keydown", function(e){ if(e.key === "Escape") closeLightbox(); });
+</script>
+
+</body>
+</html>

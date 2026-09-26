@@ -1,0 +1,65 @@
+[
+  {
+    "id": 1775313175663,
+    "type": "admin_login",
+    "email": "oscar",
+    "details": "Admin logged in",
+    "time": "4/4/2026, 9:32:55 PM"
+  },
+  {
+    "id": 1775314549900,
+    "type": "login",
+    "email": "ninaad@gmail.com",
+    "details": "User logged in",
+    "time": "4/4/2026, 9:55:49 PM"
+  },
+  {
+    "id": 1775314693562,
+    "type": "register",
+    "email": "mostafa@gmail.com",
+    "details": "New user registered",
+    "time": "4/4/2026, 9:58:13 PM"
+  },
+  {
+    "id": 1775314698030,
+    "type": "login",
+    "email": "mostafa@gmail.com",
+    "details": "User logged in",
+    "time": "4/4/2026, 9:58:18 PM"
+  },
+  {
+    "id": 1775381344553,
+    "type": "register",
+    "email": "mo@gmail.com",
+    "details": "New user registered",
+    "time": "4/5/2026, 4:29:04 PM"
+  },
+  {
+    "id": 1775381357615,
+    "type": "login",
+    "email": "mo@gmail.com",
+    "details": "User logged in",
+    "time": "4/5/2026, 4:29:17 PM"
+  },
+  {
+    "id": 1775381486159,
+    "type": "admin_login",
+    "email": "oscar",
+    "details": "Admin logged in",
+    "time": "4/5/2026, 4:31:26 PM"
+  },
+  {
+    "id": 1775382445013,
+    "type": "deposit_approved",
+    "email": "mo@gmail.com",
+    "details": "recharge of $65466 approved",
+    "time": "4/5/2026, 4:47:25 PM"
+  },
+  {
+    "id": 1775382447625,
+    "type": "withdraw_approved",
+    "email": "mo@gmail.com",
+    "details": "withdraw of $500 approved",
+    "time": "4/5/2026, 4:47:27 PM"
+  }
+]
