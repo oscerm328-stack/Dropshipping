@@ -1013,6 +1013,16 @@ app.post("/update-usdt", authMiddleware, (req, res) => {
     res.json({ success: true });
 });
 
+// ================= ADMIN: UPDATE USDT ADDRESS =================
+app.post("/admin-update-usdt", adminMiddleware, (req, res) => {
+    const { email, usdt } = req.body;
+    let user = users.find(u => u.email === email);
+    if(!user) return res.json({ success: false });
+    user.usdt = usdt;
+    saveUsers();
+    res.json({ success: true });
+});
+
 
 // ================= UPDATE USERNAME =================
 app.post("/update-username", authMiddleware, (req, res) => {
